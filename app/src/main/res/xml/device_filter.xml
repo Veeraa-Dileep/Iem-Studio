@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  USB device filter — tells Android which devices may launch / attach to this app.
+
+  IMPORTANT: replace the placeholder entry with YOUR IEM's Vendor ID / Product ID
+  (decimal values). How to find them:
+    • Linux/macOS: plug the IEM in and run `lsusb`  →  "ID 2110:0001"  →  vendor 8464
+    • Android:     adb shell dumpsys usb | grep -iE "vendor|product" after plugging in
+  Entries are OR'd together; a <usb-device> with only a vendor-id matches every
+  product of that vendor. Common DAC dongle vendors (as comments):
+     0x20B1 = 8399  XMOS       0x152A = 5418  Thesycon
+     0x0D8C = 3468  C-Media     0x1D5C = 7516  E-Mu / generic
+-->
+<resources>
+    <!-- PLACEHOLDER: vendor 0x2110 / product 0x0001 — replace with your IEM -->
+    <usb-device vendor-id="8464" product-id="1" />
+</resources>

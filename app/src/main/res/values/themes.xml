@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark audiophile look; Compose paints everything else at runtime. -->
+    <style name="Theme.IemStudio" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0E0F13</item>
+        <item name="android:statusBarColor">#0E0F13</item>
+        <item name="android:navigationBarColor">#0E0F13</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

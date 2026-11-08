@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IEM Studio — UI Preview</title>
+<style>
+  :root{
+    --bg:#0E0F13; --surface:#16181F; --surface-hi:#1E222C; --surface-lo:#111319;
+    --amber:#FFB74D; --amber-deep:#E08E2E; --amber-glow:rgba(255,183,77,.14);
+    --text:#F2EFE9; --text2:#9A958C; --success:#4CAF7D; --danger:#E05A5A; --blue:#5AA7E0;
+    --line:#2A2E38;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+  body{background:#0a0b0f;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:24px 12px;color:var(--text)}
+  h1{font-size:15px;color:var(--text2);font-weight:600;letter-spacing:.4px;margin-bottom:14px}
+  h1 b{color:var(--amber)}
+  .stage{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+  .frame{width:390px;background:var(--bg);border-radius:38px;border:1px solid #2a2e38;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;position:relative}
+  .screen{height:740px;overflow-y:auto;padding:20px 18px 90px;scrollbar-width:none}
+  .screen::-webkit-scrollbar{display:none}
+  /* ── shared pieces ── */
+  .header h2{font-size:21px;font-weight:800;letter-spacing:.2px}
+  .header p{font-size:11.5px;color:var(--text2);margin-top:2px}
+  .card{background:var(--surface);border-radius:20px;padding:16px;margin-top:14px}
+  .card-hi{background:var(--surface-hi);border-radius:22px;padding:16px;margin-top:14px}
+  .card h3{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .card h3 .ico{color:var(--amber);font-size:15px}
+  .card .sub{font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--text2);background:transparent;cursor:pointer;user-select:none}
+  .chip.on{border-color:var(--amber);background:var(--amber-glow);color:var(--amber);font-weight:600}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--amber);color:#241703;border:none;border-radius:14px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;width:100%}
+  .btn:disabled{background:var(--surface-hi);color:var(--text2)}
+  .btn.ghost{background:transparent;color:var(--danger);border:1px solid transparent}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .sec{font-size:10.5px;color:var(--text2);text-align:center;letter-spacing:.3px}
+  /* device card */
+  .dev-ico{width:52px;height:52px;border-radius:16px;background:var(--amber-glow);display:flex;align-items:center;justify-content:center;font-size:22px}
+  .dev-name{font-size:14.5px;font-weight:700}
+  .dev-sub{font-size:11px;color:var(--text2);margin-top:2px}
+  .badge{font-size:11px;font-weight:600;display:flex;align-items:center;gap:6px}
+  .b-meta{font-size:10px;color:var(--text2);text-align:right;margin-top:3px}
+  /* volume ring */
+  .ring-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .ring{width:196px;height:196px;border-radius:50%;position:relative;
+    background:conic-gradient(var(--amber) 0deg 216deg, var(--surface-hi) 216deg 360deg);
+    -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 17px),#000 calc(100% - 16px));
+    mask:radial-gradient(farthest-side,transparent calc(100% - 17px),#000 calc(100% - 16px));}
+  .ring-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+  .ring-in .v{font-size:48px;font-weight:800}
+  .ring-in .p{font-size:12px;color:var(--text2)}
+  .vol-btns{display:flex;align-items:center;gap:14px;margin-top:2px}
+  .vbtn{width:44px;height:44px;border-radius:50%;background:var(--surface-hi);border:none;color:var(--text);font-size:20px;cursor:pointer}
+  .vbtn.mute{background:transparent}
+  .chips{display:flex;gap:8px;margin-top:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  /* EQ */
+  .eqchart{position:relative;height:270px;margin-top:10px}
+  .eqchart svg{position:absolute;inset:0;width:100%;height:100%}
+  .bands{position:absolute;inset:0;display:flex}
+  .band{flex:1;display:flex;flex-direction:column;align-items:center;position:relative;cursor:ns-resize}
+  .band .gv{position:absolute;top:26px;bottom:26px;width:100%;display:flex;justify-content:center}
+  .band .gv .line{width:1px;background:rgba(255,255,255,.08)}
+  .band .gv .fill{position:absolute;width:3.5px;border-radius:3px;background:var(--amber)}
+  .band .gv .fill.cut{background:var(--blue)}
+  .band .gv .knob{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--amber);transform:translate(-50%,-50%);left:50%}
+  .band .val{font-size:9.5px;font-weight:700;color:var(--amber);margin-top:4px}
+  .band .freq{font-size:9.5px;color:var(--text2);margin-top:auto;margin-bottom:4px}
+  .eq-legend{font-size:10.5px;color:var(--text2);text-align:center;margin-top:8px}
+  /* output */
+  .fmt-big{font-size:22px;font-weight:800;color:var(--amber)}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .gain-track{position:relative;height:34px;margin-top:10px}
+  .gain-track .base{position:absolute;top:16px;left:0;right:0;height:4px;border-radius:4px;background:var(--surface-hi)}
+  .gain-track .fill{position:absolute;top:16px;left:0;height:4px;border-radius:4px;background:var(--amber);width:50%}
+  .gain-track .knob{position:absolute;top:6px;width:22px;height:22px;border-radius:50%;background:var(--amber);transform:translateX(-50%);left:50%;box-shadow:0 0 12px rgba(255,183,77,.5)}
+  .gain-lbl{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text2);margin-top:6px}
+  .gain-cur{text-align:center;color:var(--amber);font-weight:800;font-size:15px;margin-top:8px}
+  .switch{width:46px;height:26px;border-radius:99px;background:var(--amber);position:relative;cursor:pointer;flex-shrink:0}
+  .switch::after{content:'';position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:#fff}
+  .switch.off{background:var(--surface-hi)}
+  .switch.off::after{right:auto;left:3px}
+  /* settings */
+  .setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0}
+  .setrow+.setrow{border-top:1px solid var(--line)}
+  .setrow .t{font-size:13px;font-weight:600}
+  .setrow .d{font-size:10.5px;color:var(--text2);margin-top:2px;line-height:1.4}
+  .field{width:100%;background:var(--surface-lo);border:1px solid var(--line);border-radius:12px;padding:11px 13px;color:var(--text);font-size:12.5px;margin-top:10px;outline:none}
+  .field:focus{border-color:var(--amber)}
+  .field.lbl{font-size:10px;color:var(--text2);margin:12px 0 -14px 2px;background:var(--surface);padding:0 4px;position:relative;z-index:1}
+  .info{font-size:11px;color:var(--text2);line-height:1.6;margin-top:8px}
+  .about-row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0}
+  .about-row span{color:var(--text2)}
+  /* bottom nav */
+  .nav{position:absolute;bottom:0;left:0;right:0;background:var(--surface-lo);border-top:1px solid var(--line);display:flex;padding:8px 6px 14px}
+  .nav button{flex:1;background:none;border:none;color:var(--text2);font-size:9.5px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;border-radius:12px}
+  .nav button .n{font-size:18px}
+  .nav button.on{color:var(--amber)}
+  .nav button.on .pill{background:var(--amber-glow)}
+  .nav button .pill{padding:2px 14px;border-radius:10px}
+  .hidden{display:none!important}
+  .err{background:rgba(224,90,90,.12);border-radius:14px;padding:10px 14px;color:var(--danger);font-size:11.5px;margin-top:14px}
+  .bar{height:8px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:8px}
+  .bar i{display:block;height:100%;width:86%;background:var(--success);border-radius:99px}
+  @media(max-width:900px){.stage{gap:14px}}
+</style>
+</head>
+<body>
+<h1><b>IEM Studio</b> — design preview of the Jetpack Compose app (dark audiophile / amber)</h1>
+<div class="stage">
+<!-- ══════════════════════════ PHONE FRAME ══════════════════════════ -->
+<div class="frame">
+  <div class="screen">
+
+    <!-- ── HOME ── -->
+    <section id="t-home">
+      <div class="header"><h2>IEM Studio</h2><p>Type-C IEM • DAC control</p></div>
+      <div class="card-hi">
+        <div class="row">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div class="dev-ico">🎧</div>
+            <div><div class="dev-name">Demo IEM</div><div class="dev-sub">Simulated • Demo DAC</div></div>
+          </div>
+          <div style="text-align:right">
+            <div class="badge"><span class="dot" style="background:var(--success)"></span><span style="color:var(--success)">Demo</span></div>
+            <div class="b-meta">48 kHz • 24-bit<br>Battery 86%</div>
+          </div>
+        </div>
+        <div class="bar"><i></i></div>
+        <div class="sub" style="margin-top:10px">Simulated device — plug in your IEM over USB, or turn Demo mode off in Settings.</div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🔊</span> Volume</h3>
+        <div class="ring-wrap" style="margin-top:14px">
+          <div class="ring"><div class="ring-in"><div class="v">60</div><div class="p">%</div></div></div>
+          <div class="vol-btns">
+            <button class="vbtn">−</button>
+            <button class="vbtn mute" style="font-size:17px">🔇</button>
+            <button class="vbtn">＋</button>
+          </div>
+          <div class="sec">Drag the ring, or step by 20%</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">📊</span> Quick presets</h3>
+        <div class="chips">
+          <span class="chip">Flat</span><span class="chip on">Bass Boost</span><span class="chip">Rock</span>
+          <span class="chip">Pop</span><span class="chip">Vocal</span><span class="chip">Treble</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">📶</span> Bluetooth companion</h3>
+        <div class="sub" style="margin-top:12px">Bluetooth is off — enable it in Quick Settings to use the companion link.</div>
+        <div class="btn" style="margin-top:12px">📡 Scan for IEM</div>
+      </div>
+    </section>
+
+    <!-- ── EQ STUDIO ── -->
+    <section id="t-eq" class="hidden">
+      <div class="header"><h2>EQ Studio</h2><p>10-band graphic equalizer</p></div>
+      <div class="card">
+        <div class="row">
+          <h3><span class="ico">🎚️</span> Presets</h3>
+          <div style="display:flex;gap:2px">
+            <span style="font-size:17px;cursor:pointer" title="Save">💾</span>
+            <span style="font-size:17px;cursor:pointer" title="Manage">☰</span>
+          </div>
+        </div>
+        <div class="chips">
+          <span class="chip">Flat</span><span class="chip on">Bass Boost</span><span class="chip">Rock</span>
+          <span class="chip">Pop</span><span class="chip">Vocal</span><span class="chip">Treble</span>
+        </div>
+        <div class="sub">Tap a preset to apply it. Drag the sliders below to sculpt a custom curve.</div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <h3><span class="ico">📈</span> Equalizer</h3>
+          <span style="color:var(--amber);font-size:12px;font-weight:600;cursor:pointer">Reset</span>
+        </div>
+        <div class="eqchart">
+          <svg viewBox="0 0 354 270" preserveAspectRatio="none">
+            <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+              <line x1="0" y1="20" x2="354" y2="20"/><line x1="0" y1="75" x2="354" y2="75"/>
+              <line x1="0" y1="130" x2="354" y2="130"/>
+              <line x1="0" y1="185" x2="354" y2="185"/><line x1="0" y1="240" x2="354" y2="240"/>
+            </g>
+            <g stroke="rgba(255,183,77,.3)" stroke-width="1.5">
+              <line x1="0" y1="130" x2="354" y2="130"/>
+            </g>
+            <g stroke="rgba(255,255,255,.04)" stroke-width="1">
+              <line x1="17.7" y1="0" x2="17.7" y2="270"/><line x1="53.1" y1="0" x2="53.1" y2="270"/>
+              <line x1="88.5" y1="0" x2="88.5" y2="270"/><line x1="123.9" y1="0" x2="123.9" y2="270"/>
+              <line x1="159.3" y1="0" x2="159.3" y2="270"/><line x1="194.7" y1="0" x2="194.7" y2="270"/>
+              <line x1="230.1" y1="0" x2="230.1" y2="270"/><line x1="265.5" y1="0" x2="265.5" y2="270"/>
+              <line x1="300.9" y1="0" x2="300.9" y2="270"/><line x1="336.3" y1="0" x2="336.3" y2="270"/>
+            </g>
+            <path d="M17.7,105 C35.4,105 35.4,55 53.1,55 C70.8,55 70.8,78 88.5,78 C106.2,78 106.2,108 123.9,108 C141.6,108 141.6,118 159.3,118 C177,118 177,130 194.7,130 C212.4,130 212.4,148 230.1,148 C247.8,148 247.8,118 265.5,118 C283.2,118 283.2,88 300.9,88 C318.6,88 318.6,62 336.3,62"
+              fill="none" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M17.7,270 L17.7,105 C35.4,105 35.4,55 53.1,55 C70.8,55 70.8,78 88.5,78 C106.2,78 106.2,108 123.9,108 C141.6,108 141.6,118 159.3,118 C177,177 194.7,130 194.7,130 C212.4,130 212.4,148 230.1,148 C247.8,148 247.8,118 265.5,118 C283.2,118 283.2,88 300.9,88 C318.6,88 318.6,62 336.3,62 L336.3,270 Z"
+              fill="rgba(255,183,77,.08)"/>
+          </svg>
+          <div class="bands">
+            <div class="band"><div class="gv" style="--y:105px"><span class="line"></span><span class="fill" style="top:130px;height:25px"></span><span class="knob" style="top:105px"></span></div><div class="val">+6.0</div><div class="freq">31</div></div>
+            <div class="band"><div class="gv" style="--y:55px"><span class="line"></span><span class="fill" style="top:130px;height:75px"></span><span class="knob" style="top:55px"></span></div><div class="val">+5.0</div><div class="freq">62</div></div>
+            <div class="band"><div class="gv" style="--y:78px"><span class="line"></span><span class="fill" style="top:130px;height:52px"></span><span class="knob" style="top:78px"></span></div><div class="val">+4.0</div><div class="freq">125</div></div>
+            <div class="band"><div class="gv" style="--y:108px"><span class="line"></span><span class="fill" style="top:130px;height:22px"></span><span class="knob" style="top:108px"></span></div><div class="val">+2.5</div><div class="freq">250</div></div>
+            <div class="band"><div class="gv" style="--y:118px"><span class="line"></span><span class="fill" style="top:130px;height:12px"></span><span class="knob" style="top:118px"></span></div><div class="val">+1.0</div><div class="freq">500</div></div>
+            <div class="band"><div class="gv" style="--y:130px"><span class="line"></span><span class="knob" style="top:130px;background:var(--text2)"></span></div><div class="val">0.0</div><div class="freq">1k</div></div>
+            <div class="band"><div class="gv" style="--y:148px"><span class="line"></span><span class="fill cut" style="top:130px;height:18px"></span><span class="knob" style="top:148px;background:var(--blue)"></span></div><div class="val" style="color:var(--blue)">−1.5</div><div class="freq">2k</div></div>
+            <div class="band"><div class="gv" style="--y:118px"><span class="line"></span><span class="fill" style="top:130px;height:12px"></span><span class="knob" style="top:118px"></span></div><div class="val">+1.0</div><div class="freq">4k</div></div>
+            <div class="band"><div class="gv" style="--y:88px"><span class="line"></span><span class="fill" style="top:130px;height:42px"></span><span class="knob" style="top:88px"></span></div><div class="val">+3.5</div><div class="freq">8k</div></div>
+            <div class="band"><div class="gv" style="--y:62px"><span class="line"></span><span class="fill" style="top:130px;height:68px"></span><span class="knob" style="top:62px"></span></div><div class="val">+5.0</div><div class="freq">16k</div></div>
+          </div>
+        </div>
+        <div class="eq-legend">Range −12 … +12 dB • 0.5 dB steps • vertical drag</div>
+      </div>
+    </section>
+
+    <!-- ── AUDIO OUTPUT ── -->
+    <section id="t-out" class="hidden">
+      <div class="header"><h2>Audio Output</h2><p>DAC format &amp; gain</p></div>
+      <div class="card">
+        <h3><span class="ico">⚡</span> Active format</h3>
+        <div class="fmt-big" style="margin-top:10px">48 kHz • 24-bit</div>
+        <div class="sub">The format the DAC is currently asked to run.</div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🎛️</span> Sample rate</h3>
+        <div class="flow">
+          <span class="chip">44.1 kHz</span><span class="chip on">48 kHz</span><span class="chip">88.2 kHz</span>
+          <span class="chip">96 kHz</span><span class="chip">176.4 kHz</span><span class="chip">192 kHz</span>
+        </div>
+        <div class="sub">Uses the USB Audio Class sampling-frequency control, with a vendor-command fallback.</div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🧠</span> Bit depth</h3>
+        <div class="flow"><span class="chip">16-bit</span><span class="chip on">24-bit</span><span class="chip">32-bit</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🔊</span> DAC gain</h3>
+        <div class="gain-track">
+          <div class="base"></div><div class="fill"></div><div class="knob"></div>
+        </div>
+        <div class="gain-lbl"><span>0 dB</span><span>+12 dB</span></div>
+        <div class="gain-cur">+6.0 dB</div>
+        <div class="sub" style="text-align:center">Analog / digital gain applied after the DAC stage.</div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <div><div style="font-size:13.5px;font-weight:600">Device LED</div><div class="sub" style="margin-top:3px">Indicator light on the IEM body or cable controller.</div></div>
+          <div class="switch" onclick="this.classList.toggle('off')"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">ℹ️</span> How it works</h3>
+        <div class="info">Android's USB audio stack owns the PCM stream to the DAC. This app controls the DAC's hardware settings — volume, EQ, gain and format — over the vendor control channel. Sample-rate changes require a DAC and phone that both support the selected rate.</div>
+      </div>
+    </section>
+
+    <!-- ── SETTINGS ── -->
+    <section id="t-set" class="hidden">
+      <div class="header"><h2>Settings</h2><p>Connection, controls &amp; companion link</p></div>
+      <div class="card">
+        <h3><span class="ico">⚙️</span> General</h3>
+        <div class="setrow"><div><div class="t">Demo mode</div><div class="d">Simulated IEM so the app can be explored without hardware.</div></div><div class="switch"></div></div>
+        <div class="setrow"><div><div class="t">Auto-connect on plug-in</div><div class="d">Request USB access automatically when the IEM is attached.</div></div><div class="switch"></div></div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🎛️</span> Controls</h3>
+        <div style="font-size:12.5px;font-weight:600;margin-top:12px">Volume step size: 20%</div>
+        <div class="gain-track"><div class="base"></div><div class="fill" style="width:33%"></div><div class="knob" style="left:33%"></div></div>
+        <div class="gain-lbl"><span>5%</span><span>50%</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">📶</span> Bluetooth companion</h3>
+        <div class="info">The IEM's BLE link exposes a JSON control channel. Adjust the advertised name prefix and, if needed, the GATT service/characteristic UUIDs.</div>
+        <div class="field lbl">Device name prefix</div>
+        <input class="field" value="IEM-">
+        <div class="field lbl">GATT service UUID</div>
+        <input class="field" value="0000FEE0-0000-1000-8000-00805f9b34fb">
+        <div class="field lbl">GATT characteristic UUID</div>
+        <input class="field" value="0000FEE1-0000-1000-8000-00805f9b34fb">
+      </div>
+      <div class="card">
+        <h3><span class="ico">ℹ️</span> About</h3>
+        <div style="margin-top:10px">
+          <div class="about-row"><span>App version</span><b>1.0.0</b></div>
+          <div class="about-row"><span>Device</span><b>Demo IEM</b></div>
+          <div class="about-row"><span>Vendor</span><b>Simulated</b></div>
+          <div class="about-row"><span>DAC chip</span><b>Demo DAC</b></div>
+          <div class="about-row"><span>Firmware</span><b>1.0.0-demo</b></div>
+        </div>
+        <div class="btn ghost" style="margin-top:12px;border:1px solid rgba(224,90,90,.4)">⏻ Reset all settings</div>
+      </div>
+      <div class="sub" style="margin-top:14px">IEM Studio is a hardware companion template — the USB vendor protocol and BLE command format must be mapped to your IEM's firmware (see README.md).</div>
+    </section>
+
+  </div>
+  <!-- bottom nav -->
+  <div class="nav">
+    <button class="on" data-t="home"><span class="pill"><span class="n">🏠</span></span>Home</button>
+    <button data-t="eq"><span class="pill"><span class="n">📊</span></span>EQ</button>
+    <button data-t="out"><span class="pill"><span class="n">🎛️</span></span>Output</button>
+    <button data-t="set"><span class="pill"><span class="n">⚙️</span></span>Settings</button>
+  </div>
+</div>
+</div>
+
+<script>
+  const tabs = {home:'t-home',eq:'t-eq',out:'t-out',set:'t-set'};
+  document.querySelectorAll('.nav button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      Object.entries(tabs).forEach(([k,id])=>document.getElementById(id).classList.toggle('hidden',k!==b.dataset.t));
+    });
+  });
+</script>
+</body>
+</html>
